@@ -46,6 +46,8 @@ int main(int ac, char *av[])
 	if( (poke_parse(filename)) == 1 )
 		return 1;
 
+	/* This will not successfully print */
+
 	// for(i = 0; i <= count; i++)
 	// {
 	// 	printf ("Number: %d\n", pokedex[i].number);
@@ -138,6 +140,8 @@ int poke_parse(char *filename)
 
 
 	    	pokedex[count] = p;
+
+	    	/* This will successfully print */
 
 	    	// printf("\t%d\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d \n", pokedex[count].number, pokedex[count].name, pokedex[count].type1, pokedex[count].type2,
 	    	//  pokedex[count].total, pokedex[count].hp, pokedex[count].attack, pokedex[count].defense, pokedex[count].spAttack, pokedex[count].spDefense, pokedex[count].speed);
