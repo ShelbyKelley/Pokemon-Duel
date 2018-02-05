@@ -1,10 +1,6 @@
 /* 
  *  Independent Study Project 
  *
- *	Dueling Pokemon
- *	v1. Parse the .csv and randomly select
- *		two pokemon.
- *
  *	Shelby Kelley
  */
 
@@ -12,74 +8,55 @@
 #import <unistd.h>
 #import <stdlib.h>
 #import <string.h>
+#import <time.h>
 
-#define ARR_SIZE 4096
+#define ARR_SIZE 151
+#define NAMESIZE 132
 #define BUFFER_SIZE 256
 
-struct Pokemon
+struct pokemon
 {
 	int number;
-	char *name;
-	char *type1; 
-	char *type2;
-	int total;
+	char name[NAMESIZE];
 	int hp;
 	int attack;
 	int defense;
-	int spAttack;
-	int spDefense;
 	int speed;
 };
 
-int count = 0;
-struct Pokemon pokedex[ARR_SIZE];
-
-/* Prototypes */
-int poke_parse(char *filename);
+struct pokemon pokemon1;  /* Pokemon for Player 1 -- can change throughtout the game */
+struct pokemon pokemon2;  /* Pokemon for Player 2 -- constantly updated by the game */
 
 
-int main(int ac, char *av[]) 
+/* Choose a random number for Pokemon1 & Pokemon2 */
+int randInt()
 {
-	int i = 0;
-	char *filename = "pokemon.csv";
-
-	if( (poke_parse(filename)) == 1 )
-		return 1;
-
-	/* This will not successfully print */
-
-	// for(i = 0; i <= count; i++)
-	// {
-	// 	printf ("Number: %d\n", pokedex[i].number);
- //    	printf ("Name: %s\n", pokedex[i].name);
- //    	printf ("Total: %d\n", pokedex[i].total);
- //    	printf ("HP: %d\n", pokedex[i].hp);
-	//     printf ("Attack: %d\n", pokedex[i].attack);
-	//     printf ("Defense: %d\n", pokedex[i].defense);
-	//     printf ("Special Attack: %d\n", pokedex[i].spAttack);
-	//     printf ("Special Defense: %d\n", pokedex[i].spDefense);
-	//     printf ("Speed: %d\n", pokedex[i].speed);
-	//     printf ("\n");
-	// }
-
-    return 0;
+	int num = ( (rand() % 151) + 1 );
+	return num;
 }
 
 
-int poke_parse(char *filename) 
+/* Summary of the status of the Pokemon */
+void pokemonSummary(struct pokemon p)
+{
+  	printf("Number: %d\nName: %s\nHP: %d\nAttack: %d\nDefense: %d\nSpeed: %d\n\n",  
+  			p.number, p.name, p.hp, p.attack, p.defense, p.speed);
+}
+
+
+/* Parse in the pokemon.csv */
+int pokemonFinder(char *filename, int rand1, int rand2) 
 {
 	FILE *fp;
 	char *buffer;
     char *token;
-
-    struct Pokemon p;
+    int count = 0;
 
     if( (fp = fopen(filename, "r")) == NULL )
     {
         printf ("file cannot be opened");
  		return 1;
     }
-
 
     buffer = malloc(BUFFER_SIZE);
     if(buffer == NULL)
@@ -88,69 +65,87 @@ int poke_parse(char *filename)
         return 1;
     }
 
-
     fgets(buffer, BUFFER_SIZE, fp);
-    for(count = 0; count < ARR_SIZE; count++)
+    while( (fgets(buffer, BUFFER_SIZE, fp)) != NULL )
     {
-	    while( (fgets(buffer, BUFFER_SIZE, fp)) != NULL )
-	    {
-	    	/* Pokemon Number */
+    	count += 1;
+
+    	if(count == rand1)
+    	{
+    		/* Pokemon1 Number */
 	    	token = strtok(buffer, ",");
-	    	p.number = atoi(token);
+	    	pokemon1.number = atoi(token);
 	    	
-	    	/* Pokemon Name */
+	    	/* Pokemon1 Name */
 	    	token = strtok(NULL, ",");
-	    	p.name = token;
+	    	strcpy(pokemon1.name, token);
 
-	    	/* Pokemon Type 1 */
-	    	token = strtok(NULL, ",");
-	    	p.type1 = token;
-
-	    	/* Pokemon Type 2 */
-	    	token = strtok(NULL, ",");
-	    	p.type2 = token;
-
-	    	/* Pokemon Total */
-	    	token = strtok(NULL, ",");
-	    	p.total = atoi(token);
-
-	    	/* Pokemon HP */
+	    	/* Pokemon1 HP */
 	    	token = strtok(NULL, ", ");
-	    	p.hp = atoi(token);
+	    	pokemon1.hp = atoi(token);
 
-	    	/* Pokemon Attack */
+	    	/* Pokemon1 Attack */
 	    	token = strtok(NULL, ", ");
-	    	p.attack = atoi(token);
+	    	pokemon1.attack = atoi(token);
 
-	    	/* Pokemon Defense */
-	    	 token = strtok(NULL, ", ");
-	    	 p.defense = atoi(token);
+	    	/* Pokemon1 Defense */
+	    	token = strtok(NULL, ", ");
+	    	pokemon1.defense = atoi(token);
 
-	    	/* Pokemon Special Attack */
-	    	 token = strtok(NULL, ", ");
-	    	 p.spAttack = atoi(token);
+	    	/* Pokemon1 Speed */
+	    	token = strtok(NULL, ", ");
+	    	pokemon1.speed = atoi(token);
+    	}
+    	else if(count == rand2)
+    	{
+    		/* Pokemon2 Number */
+	    	token = strtok(buffer, ",");
+	    	pokemon2.number = atoi(token);
+	    	
+	    	/* Pokemon2 Name */
+	    	token = strtok(NULL, ",");
+	    	strcpy(pokemon2.name, token);
 
-	    	/* Pokemon Special Defense */
-	    	 token = strtok(NULL, ", ");
-	    	 p.spDefense = atoi(token);
+	    	/* Pokemon2 HP */
+	    	token = strtok(NULL, ", ");
+	    	pokemon2.hp = atoi(token);
 
-	    	/* Pokemon Speed */
-	    	 token = strtok(NULL, ", ");
-	    	 p.speed = atoi(token);
+	    	/* Pokemon2 Attack */
+	    	token = strtok(NULL, ", ");
+	    	pokemon2.attack = atoi(token);
 
+	    	/* Pokemon2 Defense */
+	    	token = strtok(NULL, ", ");
+	    	pokemon2.defense = atoi(token);
 
-	    	pokedex[count] = p;
-
-	    	/* This will successfully print */
-
-	    	// printf("\t%d\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d \n", pokedex[count].number, pokedex[count].name, pokedex[count].type1, pokedex[count].type2,
-	    	//  pokedex[count].total, pokedex[count].hp, pokedex[count].attack, pokedex[count].defense, pokedex[count].spAttack, pokedex[count].spDefense, pokedex[count].speed);
-	    }
+	    	/* Pokemon2 Speed */
+	    	token = strtok(NULL, ", ");
+	    	pokemon2.speed = atoi(token);
+    	}
 	}
-
 
     free(buffer);
     fclose(fp);
 
     return 0;
 }
+
+
+int main(int ac, char *av[]) 
+{
+	char *filename = "pokemon.csv";
+
+	srand(time(NULL));   /* should only be called once */
+
+	int rand1 = randInt();
+	int rand2 = randInt();
+	printf("Rand1: %d Rand2: %d\n\n", rand1, rand2);
+
+	pokemonFinder(filename, rand1, rand2);
+
+	pokemonSummary(pokemon1);
+	pokemonSummary(pokemon2);
+
+    return 0;
+}
+
