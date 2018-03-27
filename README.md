@@ -1,10 +1,12 @@
 # Pokemon-Duel
 
-pokemon.c 
-	This program currently gets two random numbers between 1 - 151 and parses through the pokemon.csv to find the two pokemon that correspond to these random numbers. It then prints the information of these two pokemon.
+This game is being created for my independent study class.
 
-pokemon.csv
-	The information per pokemon in this csv is: number, name, hp, attack, defense, and speed.
+How to run: gcc -o Pokemon board.c misc.c pokemon.c network.c terminal.c
 
-I will be using the source code given in this youtube video as a reference for networking in C:
-https://www.youtube.com/watch?v=fNWL5G_zamE
+
+-----------------------------------------------------------------------------------------
+
+The template for this project came from the source code given in this YouTube video:
+
+[Link to YouTube Video](https://www.youtube.com/watch?v=fNWL5G_zamE)
