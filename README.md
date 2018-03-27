@@ -1,6 +1,6 @@
 # Pokemon-Duel
 
-This game is being created for my independent study class. This application should be run on a Linux/Unix OS.
+This application is being created for my independent study class and should be run on a Linux/Unix OS.
 
 How to run: 
 1. $ gcc -o Pokemon board.c misc.c pokemon.c network.c terminal.c
