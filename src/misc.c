@@ -119,8 +119,9 @@ void print_infos_screen (void)
 	printf (" connect to the server by typing its IP address.          \n\n");
 
 	printf (" This game was created using Nettoe source code,          \n");
+	nettoe_term_set_color (COLOR_GREEN, ATTRIB_BRIGHT);
 	printf (" http://nettoe.sourceforge.net/                           \n\n");
-
+	nettoe_term_reset_color ();
 	printf (" Hope you enjoy playing Pokemon Duel! - Shelby Kelley     \n\n");
 
 	nettoe_term_set_color (COLOR_MAGENTA, ATTRIB_BRIGHT);

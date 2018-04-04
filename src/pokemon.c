@@ -38,7 +38,6 @@ enum {
 static char player1_name[MAX_PNAME_LEN];
 static char player2_name[MAX_PNAME_LEN];
 
-static int game_mode = 0;
 static int who_starts = 0;
 static int winner = GAME_IS_ALIVE;
 
@@ -49,24 +48,19 @@ static int sock = -1;
 
 static void main_menu (void);
 static void network_menu (void);
-
 void print_header (int type);
 static void show_game (void);
 static void show_drawed_game (void);
 static void show_waiting_for_move (const char *name);
 static void get_player1_move (void);
 static void get_player2_move (void);
-
 static void server_start (void);
 static void client_start (void);
 static void init_server_network_game (void);
 static void init_client_network_game (void);
-
-static void recv_matrix (int fd);
-static void send_matrix (int fd);
-
+static void recv_pokemon (int fd);
+static void send_pokemon (int fd);
 static void quit_game (void);
-
 
 #define SINGLE_DASHED_LINE \
   "+-----------------------------------------------------------+\n"
@@ -99,7 +93,6 @@ static void reset_color (int sig)
 
 int main (int argc, char *argv[])
 {
-
   NO_BEEP   = 0; /* beeps are enabled by default */
                  /* --no-beep disable beeps      */
   NO_COLORS = 0; /* colors are enabled by default */
@@ -152,9 +145,9 @@ void print_header (int type)
   printf ("|\n");
 
   if ( type == 0 )
-     printf (SINGLE_DASHED_LINE);
+    printf (SINGLE_DASHED_LINE);
   else
-     printf (BROKEN_DASHED_LINE);
+    printf (BROKEN_DASHED_LINE);
 
   nettoe_term_set_default_color ();
 }
@@ -226,25 +219,25 @@ static void main_menu (void)
 
   if ( selection == 1 )
   {
-      network_menu ();
+    network_menu ();
   }
   else if ( selection == 2 )
   {
-      print_header (0);
-      print_infos_screen ();
+    print_header (0);
+    print_infos_screen ();
   }
   else if ( selection == 3 )
   {
-      quit_game ();
+    quit_game ();
   }
   else
   {
-      nettoe_term_set_color (COLOR_RED, ATTRIB_BRIGHT);
-      printf ("\n Error:");
-      nettoe_term_reset_color ();
-      printf (" Incorrect choice.\n");
-      nettoe_term_set_default_color ();
-      quit_game ();
+    nettoe_term_set_color (COLOR_RED, ATTRIB_BRIGHT);
+    printf ("\n Error:");
+    nettoe_term_reset_color ();
+    printf (" Incorrect choice.\n");
+    nettoe_term_set_default_color ();
+    quit_game ();
   }
 }
 
@@ -304,28 +297,27 @@ static void network_menu (void)
 
   if ( selection == 1 )
   {
-      signal (SIGPIPE, SIG_IGN);
+    signal (SIGPIPE, SIG_IGN);
       
-      //init_pokemon_server();
-      server_start ();
+    //init_pokemon_server();
+    server_start ();
   }
   else if ( selection == 2 )
   {
-      signal (SIGPIPE, SIG_IGN);
+    signal (SIGPIPE, SIG_IGN);
       
-      //init_pokemon_client();
-      client_start ();
+    //init_pokemon_client();
+    client_start ();
   }
 
   /* Third choice returns to main menu.  */
 
   if ( has_given_eof )
   {
-      printf ("\n\n Your opponent has resigned the game by cutting connections!\n");
-      printf (" (A carrage return continues.   )\b\b\b");
-      fflush ( stdin );
-      getchar ();
-      return;
+    printf ("\n\n Your opponent has resigned the game!\n");
+    fflush ( stdin );
+    getchar ();
+    return;
   }
 }
 
@@ -351,7 +343,7 @@ static void show_game (void)
   nettoe_term_reset_color ();
   printf("%d ", pokemon1.number);
   nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
-  printf("    Number: ");
+  printf("    \t\tNumber: ");
   nettoe_term_reset_color ();
   printf("%d\n", pokemon2.number);
 
@@ -361,7 +353,7 @@ static void show_game (void)
   nettoe_term_reset_color ();
   printf("%s ", pokemon1.name);
   nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
-  printf("    Name: ");
+  printf("    \t\tName: ");
   nettoe_term_reset_color ();
   printf("%s\n", pokemon2.name);
 
@@ -371,7 +363,7 @@ static void show_game (void)
   nettoe_term_reset_color ();
   printf("%d ", pokemon1.hp);
   nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
-  printf("    HP: ");
+  printf("    \t\tHP: ");
   nettoe_term_reset_color ();
   printf("%d\n", pokemon2.hp);
 
@@ -381,7 +373,7 @@ static void show_game (void)
   nettoe_term_reset_color ();
   printf("%d ", pokemon1.attack);
   nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
-  printf("    Attack: ");
+  printf("    \t\tAttack: ");
   nettoe_term_reset_color ();
   printf("%d\n", pokemon2.attack);
 
@@ -391,36 +383,26 @@ static void show_game (void)
   nettoe_term_reset_color ();
   printf("%d ", pokemon1.defense);
   nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
-  printf("    Defense: ");
+  printf("    \t\tDefense: ");
   nettoe_term_reset_color ();
   printf("%d\n", pokemon2.defense);
 
-  /* Pokemon Speed */
-  nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
-  printf("    Speed: ");
-  nettoe_term_reset_color ();
-  printf("%d ", pokemon1.speed);
-  nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
-  printf("    Speed: ");
-  nettoe_term_reset_color ();
-  printf("%d\n", pokemon2.speed);
-
-  /* 
+  /* Score */
+  printf("\n\n");
   nettoe_term_reset_color();
   printf (BROKEN_DASHED_LINE);
-  nettoe_term_set_color (COLOR_RED, ATTRIB_BRIGHT);
-  printf ("  Score:");
-  nettoe_term_set_color (COLOR_BLUE, ATTRIB_BRIGHT);
-  printf (" %s", player1_name);
+  nettoe_term_set_color (COLOR_MAGENTA, ATTRIB_BRIGHT);
+  printf ("        Score:");
+  nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
+  printf ("  %s", player1_name);
   nettoe_term_reset_color();
   printf (" %d,", player1_status);
-  nettoe_term_set_color (COLOR_BLUE, ATTRIB_BRIGHT);
-  printf (" %s", (game_mode <= 1) ? "Computer" : player2_name);
+  nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
+  printf ("  %s", player2_name);
   nettoe_term_reset_color();
-  printf (" %d.\n", (game_mode <= 1) ? computer_status : player2_status);
+  printf (" %d.\n", player2_status);
   printf (SINGLE_DASHED_LINE);
   nettoe_term_set_default_color();
-  */
 }
 
 
@@ -443,44 +425,66 @@ static void show_waiting_for_move (const char *name)
 }
 
 
-static void get_player_move (const char *name, char pawn)
+static void get_player_move (const char *name, int player)
 {
-  /*
-
-  char move[4];
+  int selection = 0;
+  char answer[MAX_PNAME_LEN];
 
   nettoe_beep ();
-
-  nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
-  printf("\n %s", name);
-  nettoe_term_reset_color();
-  printf(", playing %c, it is your turn: ", pawn);
-
-  while (1)
-  {
-      if (scanf ("%3s", move) != 1)
-	      move[0] = '\0';
-
-      if (attempt_move (move, pawn) == VALID_MOVE)
-	      break;
-
-      fflush(stdin);
-      printf(" Invalid move. Try again: ");
-  }
+  nettoe_term_reset_color ();
+  printf ("\n   [ ");
+  nettoe_term_set_color (COLOR_GREEN, ATTRIB_BRIGHT);
+  printf("Choose a Move");
+  nettoe_term_reset_color ();
+  printf (" ]\n");
   
-  */
+  /* 1 - Attack */
+  printf ("\n   (");
+  nettoe_term_set_color (COLOR_GREEN, ATTRIB_BRIGHT);
+  printf ("1");
+  nettoe_term_reset_color ();
+  printf (") Attack\n");
+  
+  /* 2 - Run Away */
+  printf ("   (");
+  nettoe_term_set_color (COLOR_GREEN, ATTRIB_BRIGHT);
+  printf ("2");
+  nettoe_term_reset_color ();
+  printf (") Run Away\n");
+
+  while ( selection == 0 )
+  {
+    nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
+    printf("\n   %s", name);
+    nettoe_term_reset_color();
+    printf(", it is your turn: ");
+    nettoe_term_set_color (COLOR_GREEN, ATTRIB_BRIGHT);
+
+    fflush ( stdin );
+    if ( !fgets (answer, sizeof(answer), stdin) )
+      exit ( EXIT_FAILURE );
+
+    sscanf ( answer, "%d", &selection );
+    nettoe_term_reset_color();
+
+    if ( (selection < 1) || (selection > 2) )
+      selection = 0;
+
+    if(selection == 1)
+      game_attack (player);
+  }
 }
 
 
 static void get_player1_move (void)
 {
-  get_player_move (player1_name, 'X');
+  get_player_move (player1_name, 1);
 }
 
 
 static void get_player2_move (void)
 {
-  get_player_move (player2_name, 'O');
+  get_player_move (player2_name, 2);
 }
 
 
@@ -526,10 +530,10 @@ static void server_start (void)
 
   if ( sock < 0 )
   {
-      printf ("   (A carrage return continues.   )\b\b\b");
-      fflush ( stdin );
-      getchar ();
-      return;
+    printf ("   (A carrage return continues.   )\b\b\b");
+    fflush ( stdin );
+    getchar ();
+    return;
   }
 
   write_to_socket (sock, player1_name, sizeof(player1_name));
@@ -559,13 +563,13 @@ static void server_start (void)
 
   if ( who_starts == 1 )
   {
-      printf ("%s", player1_name);
-      write_to_socket (sock, player1_name, sizeof(player1_name));
+    printf ("%s", player1_name);
+    write_to_socket (sock, player1_name, sizeof(player1_name));
   }
   else
   {
-      printf ("%s", player2_name);
-      write_to_socket (sock, player2_name, sizeof(player2_name));
+    printf ("%s", player2_name);
+    write_to_socket (sock, player2_name, sizeof(player2_name));
   }
 
   nettoe_term_reset_color ();
@@ -614,10 +618,10 @@ static void client_start (void)
 
   if ( sock < 0 )
   {
-      printf ("   (A carrage return continues.   )\b\b\b");
-      fflush ( stdin );
-      getchar ();
-      return;
+    printf ("   (A carrage return continues.   )\b\b\b");
+    fflush ( stdin );
+    getchar ();
+    return;
   }
 
   nettoe_term_set_color (COLOR_MAGENTA, ATTRIB_BRIGHT);
@@ -684,7 +688,7 @@ static void recv_remote_play (int sd, int dir, const char *name)
   while ( strncmp (buf, "y", 2) && ! has_given_eof )
     read_from_socket (sd, buf, 2);
 
-  recv_matrix (sd);
+  recv_pokemon(sd);
 
   buf[0] = 'n';
   while ( strncmp ( buf, (dir == ASK_SERVER) ? "S" : "C", 2 )
@@ -703,7 +707,9 @@ static void send_local_play (int sd, int dir)
     get_player2_move ();
 
   write_to_socket (sd, "y", 2);
-  send_matrix (sd);
+
+  send_pokemon(sd);
+  
   write_to_socket (sd, (dir == I_AM_SERVER) ? "S" : "C", 2);
 }
 
@@ -714,129 +720,117 @@ static void init_server_network_game (void)
   char yes_no[2];
   char buf[MAXDATASIZE];
 
-  game_mode = 3;
-
-  // Player 1 is local player.
-
+  /* Player 1 is local player */
   write_to_socket (sock, (who_starts == 1) ? "1" : "2", 1);
 
   print_header (0);
-
   init_pokemon_server();
-  //sleep ( 5 );
 
   nettoe_term_reset_color ();
   show_game ();
 
-  /*
   do
   {
-      if (who_starts == 1)
-	      send_local_play (sock, I_AM_SERVER);
-      else
-	    {
-	        recv_remote_play (sock, ASK_CLIENT, player2_name);
+    if (who_starts == 1)
+	    send_local_play (sock, I_AM_SERVER);
+    else
+	  {
+	    recv_remote_play (sock, ASK_CLIENT, player2_name);
 
-	        if ( has_given_eof )
-	          break;
-	    }
-
-      winner = game_check();
-      if ( winner != GAME_IS_ALIVE )
+	    if ( has_given_eof )
 	      break;
+	  }
 
-      if (who_starts == 1)
-	    {
-	        recv_remote_play (sock, ASK_CLIENT, player2_name);
+    winner = game_check();
+    if ( winner != GAME_IS_ALIVE )
+	    break;
 
-	        if ( has_given_eof )
-	          break;
-	    }
-      else
-	      send_local_play (sock, I_AM_SERVER);
+    if (who_starts == 1)
+	  {
+	    recv_remote_play (sock, ASK_CLIENT, player2_name);
 
-      winner = game_check ();
-      if ( winner != GAME_IS_ALIVE )
+	    if ( has_given_eof )
 	      break;
+	  }
+    else
+	    send_local_play (sock, I_AM_SERVER);
+
+    winner = game_check();
   }
-  while (winner == GAME_IS_ALIVE && ! has_given_eof);
+  while ( winner == GAME_IS_ALIVE && ! has_given_eof );
 
 
-  // Switch roles of players for next round.
-  // An easy arithmetic trick.
-
+  /* Switch roles of players for next round */
   who_starts = (1 + 2) - who_starts;
-
   
-  // Determine who won
-
-  if (winner == GAME_IS_X_WIN)
+  /* Determine the Winner */
+  if (winner == GAME_IS_SVR_WIN)
   {
-      player1_status++;
-      show_game ();
-      printf (YOU_WIN);
+    player1_status++;
+    show_game ();
+    printf (YOU_WIN);
   }
-  else if (winner == GAME_IS_O_WIN)
+  else if (winner == GAME_IS_CLT_WIN)
   {
-      player2_status++;
-      show_game ();
-      nettoe_term_set_color (COLOR_BLUE, ATTRIB_BRIGHT);
-      printf("\n %s", player2_name);
-      nettoe_term_reset_color();
-      printf (" wins !\n");
+    player2_status++;
+    show_game ();
+    nettoe_term_set_color (COLOR_BLUE, ATTRIB_BRIGHT);
+    printf("\n %s", player2_name);
+    nettoe_term_reset_color();
+    printf (" wins !\n");
   }
-  else if (winner == GAME_IS_DRAW)	// Draw
+  else if (winner == GAME_IS_DRAW)
     show_drawed_game ();
-  else	// EOF
+  else
     return;
 
-  */
-
+  /* Starting a new Game */
   winner = GAME_IS_ALIVE;
-  
-  // start a new server_network_game
 
   nettoe_beep ();
   printf (WANT_TO_PLAY);
+
   if ( scanf ("%11s", y_n) != 1 )
     y_n[0] = 'n', y_n[1] = '\0';
   getchar ();
 
   if ( *y_n == 'n' || *y_n == 'N' )
   {
-      write_to_socket (sock, "y", 2);
-      write_to_socket (sock, "n", 2);
-      sleep ( 3 );
-      close (sock);
+    write_to_socket (sock, "y", 2);
+    write_to_socket (sock, "n", 2);
+    sleep ( 3 );
+    close (sock);
   }
   else
   {
-      if ( *y_n != 'y' && *y_n != 'Y' )
-	    {
-	         printf (UNKNOWN_ANSWER);
-	         sleep ( 2 );
-	    }
-      write_to_socket (sock, "y", 2);
-      write_to_socket (sock, "y", 2);
-      printf (WAITING_FOR_NAMED, player2_name);
+    if ( *y_n != 'y' && *y_n != 'Y' )
+	  {
+	    printf (UNKNOWN_ANSWER);
+	    sleep ( 2 );
+	  }
+    
+    write_to_socket (sock, "y", 2);
+    write_to_socket (sock, "y", 2);
+    printf (WAITING_FOR_NAMED, player2_name);
 
-      buf[0] = 'n';
-      while ( strncmp (buf, "y", 2) && ! has_given_eof )
-        read_from_socket (sock, buf, 2);
+    buf[0] = 'n';
+    while ( strncmp (buf, "y", 2) && ! has_given_eof )
+      read_from_socket (sock, buf, 2);
 
-      read_from_socket (sock, yes_no, 2);
+    read_from_socket (sock, yes_no, 2);
 
-      if ( ! has_given_eof
-          && ( !strncmp ( yes_no, "y", 2 ) || !strncmp ( yes_no, "Y", 2 ) ) )
-	    {
-	         printf ("\n %s wants to play again.\n", player2_name);
-	         printf (" Starting ... ");
-	         fflush ( stdout );
-	         sleep ( 4 );
-	         init_server_network_game ();
-	    }
+    if ( ! has_given_eof
+        && ( !strncmp ( yes_no, "y", 2 ) || !strncmp ( yes_no, "Y", 2 ) ) )
+	  {
+	    printf ("\n %s wants to play again.\n", player2_name);
+	    printf (" Starting ... ");
+	    fflush ( stdout );
+	    sleep ( 4 );
+	    init_server_network_game ();
+	  }
   }
 }
+
 
 static void init_client_network_game (void)
 {
@@ -844,14 +838,9 @@ static void init_client_network_game (void)
   char yes_no[2];
   char buf[MAXDATASIZE];
 
-  game_mode = 3;
-
-  // Player 2 is local player.
-
+  /* Player 2 is local player */
   print_header (0);
-
   init_pokemon_client();
-  //sleep ( 5 );
 
   nettoe_term_reset_color ();
   show_game ();
@@ -860,72 +849,62 @@ static void init_client_network_game (void)
 
   who_starts = strncmp (buf, "1", 1) ? 2 : 1;
 
-  /*
   do
   {
-      // Player 2 is local player.
+    if (who_starts == 1)
+	  {
+	    recv_remote_play (sock, ASK_SERVER, player1_name);
 
-      if (who_starts == 1)
-	    {
-	        recv_remote_play (sock, ASK_SERVER, player1_name);
-
-	        if ( has_given_eof )
-	          break;
-	    }
-      else
-	      send_local_play (sock, I_AM_CLIENT);
-
-      winner = game_check();
-
-      if( winner != GAME_IS_ALIVE )
+	    if ( has_given_eof )
 	      break;
+	  }
+    else
+	    send_local_play (sock, I_AM_CLIENT);
 
-      if (who_starts == 1)
-	      send_local_play (sock, I_AM_CLIENT);
-      else
-	    {
-	        recv_remote_play (sock, ASK_SERVER, player1_name);
+    winner = game_check();
 
-	        if( has_given_eof )
-	          break;
-	    }
+    if( winner != GAME_IS_ALIVE )
+	    break;
 
-      winner = game_check();
-      if ( winner != GAME_IS_ALIVE )
+    if (who_starts == 1)
+	    send_local_play (sock, I_AM_CLIENT);
+    else
+	  {
+	    recv_remote_play (sock, ASK_SERVER, player1_name);
+
+	    if( has_given_eof )
 	      break;
+	  }
+
+    winner = game_check();
   }
-  while(winner == GAME_IS_ALIVE && ! has_given_eof);
+  while ( winner == GAME_IS_ALIVE && ! has_given_eof );
 
-  // Switch roles of players for next round.
-  // An easy arithmetic trick.
-
+  /* Switch roles of players for next round */
   who_starts = (1 + 2) - who_starts;
 
-  if (winner == GAME_IS_X_WIN)
+  /* Determine the Winner */
+  if (winner == GAME_IS_SVR_WIN)
   {
-      player1_status++;
-      show_game ();
-      nettoe_term_set_color(COLOR_BLUE, ATTRIB_BRIGHT);
-      printf("\n %s", player1_name);
-      nettoe_term_reset_color();
-      printf (" wins !\n");
+    player1_status++;
+    show_game ();
+    nettoe_term_set_color(COLOR_BLUE, ATTRIB_BRIGHT);
+    printf("\n %s", player1_name);
+    nettoe_term_reset_color();
+    printf (" wins !\n");
   }
-  else if (winner == GAME_IS_O_WIN)
+  else if (winner == GAME_IS_CLT_WIN)
   {
-      player2_status++;
-      show_game ();
-      printf (YOU_WIN);
+    player2_status++;
+    show_game ();
+    printf (YOU_WIN);
   }
-  else if (winner == GAME_IS_DRAW)	// Draw
-  {
+  else if (winner == GAME_IS_DRAW)
     show_drawed_game ();
-  }
-  else	// EOF
-  {
+  else
     return;
-  }
   
-  */
+  /* Starting a new Game */
 
   winner = GAME_IS_ALIVE;
   printf ( WAITING_FOR_NAMED, player1_name );
@@ -936,79 +915,77 @@ static void init_client_network_game (void)
 
   read_from_socket (sock, yes_no, 2);
 
-  if( has_given_eof )
+  if ( has_given_eof )
     return;
 
-  if( !strncmp ( yes_no, "y", 2 ) || !strncmp ( yes_no, "Y", 2 ) )
+  if ( !strncmp ( yes_no, "y", 2 ) || !strncmp ( yes_no, "Y", 2 ) )
   {
-      printf ("\n %s wants to play again. What about you ?\n", player1_name);
-      nettoe_beep ();
-      printf (WANT_TO_PLAY);
-      if( scanf ("%11s", y_n) != 1 )
-	      y_n[0] = 'n', y_n[1] = '\0';
-      getchar ();
+    printf ("\n %s wants to play again. What about you ?\n", player1_name);
+    nettoe_beep ();
+    printf (WANT_TO_PLAY);
 
-      if ( *y_n == 'n' || *y_n == 'N' )
-	    {
-	        write_to_socket (sock, "y", 2);
-	        write_to_socket (sock, "n", 2);
-	        printf ("Ending session ...\n");
-	        close (sock);
-	    }
-      else
-	    {
-	        if( *y_n != 'y' && *y_n != 'Y' )
-	        {
-	            printf (UNKNOWN_ANSWER);
-	            sleep ( 2 );
-	        }
+    if( scanf ("%11s", y_n) != 1 )
+	    y_n[0] = 'n', y_n[1] = '\0';
+    getchar ();
 
-	        write_to_socket (sock, "y", 2);
-	        write_to_socket (sock, "y", 2);
-	        printf (" Starting ... ");
-	        fflush ( stdout );
-	        sleep ( 4 );
-	        init_client_network_game ();
+    if ( *y_n == 'n' || *y_n == 'N' )
+	  {
+	    write_to_socket (sock, "y", 2);
+	    write_to_socket (sock, "n", 2);
+	    printf ("Ending session ...\n");
+	    close (sock);
+	  }
+    else
+	  {
+	    if( *y_n != 'y' && *y_n != 'Y' )
+	    {
+	      printf (UNKNOWN_ANSWER);
+	      sleep ( 2 );
 	    }
+
+	    write_to_socket (sock, "y", 2);
+	    write_to_socket (sock, "y", 2);
+	    printf (" Starting ... ");
+	    fflush ( stdout );
+	    sleep ( 4 );
+	    init_client_network_game ();
+	  }
   }
   else
   {
-      printf ("\n %s doesn't want to play again. Sorry.\n", player1_name);
-      sleep ( 3 );
-      close (sock);
-      return;
+    printf ("\n %s doesn't want to play again. Sorry.\n", player1_name);
+    sleep ( 3 );
+    close (sock);
+    return;
   }
 }
 
-static void send_matrix (int fd )
+
+static void send_pokemon (int fd )
 {
-  /*
-  write_to_socket (fd, &c11, 1);
-  write_to_socket (fd, &c12, 1);
-  write_to_socket (fd, &c13, 1);
-  write_to_socket (fd, &c21, 1);
-  write_to_socket (fd, &c22, 1);
-  write_to_socket (fd, &c23, 1);
-  write_to_socket (fd, &c31, 1);
-  write_to_socket (fd, &c32, 1);
-  write_to_socket (fd, &c33, 1);
-  */
+  char p1[sizeof(struct pokemon)];
+  char p2[sizeof(struct pokemon)];
+
+  memcpy( p1, &pokemon1, sizeof(pokemon1) );
+  memcpy( p2, &pokemon2, sizeof(pokemon2) );
+
+  write_to_socket ( fd, p1, sizeof(p1) );
+  write_to_socket ( fd, p2, sizeof(p2) );
 }
 
-static void recv_matrix ( int fd )
+
+static void recv_pokemon ( int fd )
 {
-  /*
-  read_from_socket (fd, &c11, 1);
-  read_from_socket (fd, &c12, 1);
-  read_from_socket (fd, &c13, 1);
-  read_from_socket (fd, &c21, 1);
-  read_from_socket (fd, &c22, 1);
-  read_from_socket (fd, &c23, 1);
-  read_from_socket (fd, &c31, 1);
-  read_from_socket (fd, &c32, 1);
-  read_from_socket (fd, &c33, 1);
-  */
+  char p1[sizeof(struct pokemon)];
+  char p2[sizeof(struct pokemon)];
+
+  memcpy( p1, &pokemon1, sizeof(pokemon1) );
+  memcpy( p2, &pokemon2, sizeof(pokemon2) );
+
+  read_from_socket ( fd, p1, sizeof(p1) );
+  read_from_socket ( fd, p2, sizeof(p2) );
 }
+
 
 static void quit_game (void)
 {

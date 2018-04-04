@@ -11,7 +11,6 @@
 #endif
 
 #define MAXDATASIZE 50
-
 #define MAX_PNAME_LEN 32 /* this define max chars for the player names*/
 
 int NO_BEEP;
