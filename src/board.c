@@ -73,15 +73,15 @@ int pokemon_server (char *filename, int num)
       strcpy(pokemon1.name, token);
 
       /* Pokemon1 HP */
-      token = strtok(NULL, ", ");
+      token = strtok(NULL, ",");
       pokemon1.hp = atoi(token);
 
       /* Pokemon1 Attack */
-      token = strtok(NULL, ", ");
+      token = strtok(NULL, ",");
       pokemon1.attack = atoi(token);
 
       /* Pokemon1 Defense */
-      token = strtok(NULL, ", ");
+      token = strtok(NULL, ",");
       pokemon1.defense = atoi(token);
     }
   }
@@ -129,15 +129,15 @@ int pokemon_client(char *filename, int num)
       strcpy(pokemon2.name, token);
 
       /* Pokemon1 HP */
-      token = strtok(NULL, ", ");
+      token = strtok(NULL, ",");
       pokemon2.hp = atoi(token);
 
       /* Pokemon1 Attack */
-      token = strtok(NULL, ", ");
+      token = strtok(NULL, ",");
       pokemon2.attack = atoi(token);
 
       /* Pokemon1 Defense */
-      token = strtok(NULL, ", ");
+      token = strtok(NULL, ",");
       pokemon2.defense = atoi(token);
     }
   }

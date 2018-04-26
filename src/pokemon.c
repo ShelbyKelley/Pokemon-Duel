@@ -7,7 +7,6 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
-#import <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -22,10 +21,13 @@
 #include "network.h"
 #include "game.h"
 #include "board.h"
+#include "tpl.h"
 
 
 /* Has network partner reported EOF? */
 int has_given_eof = 0;
+void *addr1;
+void *addr2;
 
 enum {
   I_AM_SERVER = 0,
@@ -59,7 +61,7 @@ static void client_start (void);
 static void init_server_network_game (void);
 static void init_client_network_game (void);
 static void recv_pokemon (int fd);
-static void send_pokemon (int fd);
+static void send_pokemon (int fd, int p);
 static void quit_game (void);
 
 #define SINGLE_DASHED_LINE \
@@ -457,7 +459,9 @@ static void get_player_move (const char *name, int player)
     nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
     printf("\n   %s", name);
     nettoe_term_reset_color();
-    printf(", it is your turn: ");
+    printf(", ");
+    nettoe_term_set_color (COLOR_CYAN, ATTRIB_BRIGHT);
+    printf("it is your turn: ");
     nettoe_term_set_color (COLOR_GREEN, ATTRIB_BRIGHT);
 
     fflush ( stdin );
@@ -699,6 +703,7 @@ static void recv_remote_play (int sd, int dir, const char *name)
 
 static void send_local_play (int sd, int dir)
 {
+
   show_game ();
  
   if ( dir == I_AM_SERVER )
@@ -706,10 +711,11 @@ static void send_local_play (int sd, int dir)
   else
     get_player2_move ();
 
+  send_pokemon( sd, 1 );
+  send_pokemon( sd, 2 );
+
   write_to_socket (sd, "y", 2);
 
-  send_pokemon(sd);
-  
   write_to_socket (sd, (dir == I_AM_SERVER) ? "S" : "C", 2);
 }
 
@@ -724,7 +730,12 @@ static void init_server_network_game (void)
   write_to_socket (sock, (who_starts == 1) ? "1" : "2", 1);
 
   print_header (0);
+
   init_pokemon_server();
+  init_pokemon_client();
+
+  send_pokemon ( sock, 1 );
+  send_pokemon ( sock, 2 );
 
   nettoe_term_reset_color ();
   show_game ();
@@ -840,7 +851,8 @@ static void init_client_network_game (void)
 
   /* Player 2 is local player */
   print_header (0);
-  init_pokemon_client();
+
+  recv_pokemon ( sock );
 
   nettoe_term_reset_color ();
   show_game ();
@@ -961,29 +973,82 @@ static void init_client_network_game (void)
 }
 
 
-static void send_pokemon (int fd )
+static void send_pokemon (int fd, int p )
 {
-  char p1[sizeof(struct pokemon)];
-  char p2[sizeof(struct pokemon)];
+  int j = 0;
+  char *buffer;
+  buffer = (char *)malloc( sizeof(struct pokemon) );
 
-  memcpy( p1, &pokemon1, sizeof(pokemon1) );
-  memcpy( p2, &pokemon2, sizeof(pokemon2) );
+  if( p == 1 )
+  {
+    j  = sprintf(buffer,   "%d,", p);
+    j += sprintf(buffer+j,   "%d,", pokemon1.number);
+    j += sprintf(buffer+j, "%s,", pokemon1.name);
+    j += sprintf(buffer+j, "%d,", pokemon1.hp);
+    j += sprintf(buffer+j, "%d,", pokemon1.attack);
+    j += sprintf(buffer+j, "%d",  pokemon1.defense);
+  } 
+  else if ( p == 2 )
+  {
+    j  = sprintf(buffer,   "%d,", p);
+    j += sprintf(buffer+j,   "%d,", pokemon2.number);
+    j += sprintf(buffer+j, "%s,", pokemon2.name);
+    j += sprintf(buffer+j, "%d,", pokemon2.hp);
+    j += sprintf(buffer+j, "%d,", pokemon2.attack);
+    j += sprintf(buffer+j, "%d",  pokemon2.defense);
+  }
 
-  write_to_socket ( fd, p1, sizeof(p1) );
-  write_to_socket ( fd, p2, sizeof(p2) );
+  write_to_socket(fd, buffer, j);
+  free(buffer);
 }
 
 
 static void recv_pokemon ( int fd )
 {
-  char p1[sizeof(struct pokemon)];
-  char p2[sizeof(struct pokemon)];
+  char *buffer;
+  buffer = (char *)malloc( sizeof(struct pokemon) );
+  char *token;
 
-  memcpy( p1, &pokemon1, sizeof(pokemon1) );
-  memcpy( p2, &pokemon2, sizeof(pokemon2) );
+  read_from_socket ( fd, buffer, sizeof(struct pokemon) );
 
-  read_from_socket ( fd, p1, sizeof(p1) );
-  read_from_socket ( fd, p2, sizeof(p2) );
+  token = strtok(buffer, ",");
+
+  if(atoi(token) == 1)
+  {
+      token = strtok(NULL, ",");
+      pokemon1.number = atoi(token);
+        
+      token = strtok(NULL, ",");
+      strcpy(pokemon1.name, token);
+
+      token = strtok(NULL, ",");
+      pokemon1.hp = atoi(token);
+
+      token = strtok(NULL, ",");
+      pokemon1.attack = atoi(token);
+
+      token = strtok(NULL, ",");
+      pokemon1.defense = atoi(token);
+  }
+  else if(atoi(token) == 2)
+  {
+      token = strtok(NULL, ",");
+      pokemon2.number = atoi(token);
+        
+      token = strtok(NULL, ",");
+      strcpy(pokemon2.name, token);
+
+      token = strtok(NULL, ",");
+      pokemon2.hp = atoi(token);
+
+      token = strtok(NULL, ",");
+      pokemon2.attack = atoi(token);
+
+      token = strtok(NULL, ",");
+      pokemon2.defense = atoi(token);
+  }
+
+  free(buffer);
 }
 
 

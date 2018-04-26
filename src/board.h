@@ -13,7 +13,7 @@
 #define INVALID_MOVE	0
 #define VALID_MOVE	    1  
 
-#define NAMESIZE 132
+#define NAMESIZE 64
 
 struct pokemon {
   int number;

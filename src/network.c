@@ -15,13 +15,19 @@
 #include <netdb.h>
 
 #include "network.h"
+#include "board.h"
 
+int pok_read_from_sock (int sock, struct pokemon p);
+int pok_write_to_sock (int sock, struct pokemon p);
 
 /* Has network partner reported EOF? */
 extern int has_given_eof;
 
 /* Choice of INET address family. */
 extern int addrfamily;
+
+struct addrinfo hints, *ai, *aiptr;
+struct sockaddr_storage their_addr;
 
 
 int establish_listening_socket (unsigned short port_number, char *peer_ip_address, int len)
@@ -30,8 +36,8 @@ int establish_listening_socket (unsigned short port_number, char *peer_ip_addres
 	int reuse = 1;
 	socklen_t sin_size;
 	int BACKLOG = 2;
-	struct sockaddr_storage their_addr;
-	struct addrinfo hints, *ai, *aiptr;
+	//struct sockaddr_storage their_addr;
+	//struct addrinfo hints, *ai, *aiptr;
 	char portstr[10];
 	int status;
 
@@ -137,7 +143,7 @@ int connect_to_socket (char *host_ip_number, unsigned short port_number)
 {
 	int sockfd = -1, status;
 	char portstr[20];
-	struct addrinfo hints, *ai, *aiptr;
+	//struct addrinfo hints, *ai, *aiptr;
 
 	memset (&hints, 0, sizeof(hints));
 	hints.ai_family = addrfamily;
@@ -241,6 +247,31 @@ int write_to_socket (int connected_socket, char *buffer, int bytes)
 	return bytescount;
 } /* write_to_socket(int, char *, int) */
 
+/*
+int pok_read_from_sock (int sock, struct pokemon p)
+{
+	if (sendto(sock, (const void *)&p, sizeof(struct pokemon), 0,
+             aiptr->ai_addr, sizeof(aiptr->ai_addr)) == -1)
+    {
+      fprintf(stderr, "send() failed.\n");
+      fprintf(stderr, "Error description: %s\n", strerror(errno));
+      return -1;
+    }
+   return 0;
+}
+
+
+int pok_write_to_sock (int sock, struct pokemon p)
+{
+	if(recvfrom(sock, (void *)&p, sizeof(struct pokemon),
+               0, (struct sockaddr *)&their_addr, (unsigned int *)sizeof(struct sockaddr_storage) ) == -1)
+	{
+      fprintf(stderr, "recvfrom() failed.\n");
+      return -1;
+	}
+	return 0;
+}
+*/
 
 void give_local_IP (char *local_ip_address, int len)
 {
@@ -267,5 +298,5 @@ void give_local_IP (char *local_ip_address, int len)
 					local_ip_address, len,
 					NULL, 0, NI_NUMERICHOST);
 	}
-} /* give_local_IP(char *) */
+}
 
