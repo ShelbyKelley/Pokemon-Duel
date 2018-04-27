@@ -21,7 +21,6 @@
 #include "network.h"
 #include "game.h"
 #include "board.h"
-#include "tpl.h"
 
 
 /* Has network partner reported EOF? */
@@ -976,9 +975,10 @@ static void init_client_network_game (void)
 static void send_pokemon (int fd, int p )
 {
   int j = 0;
-  char *buffer;
-  buffer = (char *)malloc( sizeof(struct pokemon) );
+  char *buffer = "jigglypuff";
+  // char *buffer = "1,20,Jiglypuff,43,65,34";
 
+  /*
   if( p == 1 )
   {
     j  = sprintf(buffer,   "%d,", p);
@@ -997,20 +997,29 @@ static void send_pokemon (int fd, int p )
     j += sprintf(buffer+j, "%d,", pokemon2.attack);
     j += sprintf(buffer+j, "%d",  pokemon2.defense);
   }
+  */
 
-  write_to_socket(fd, buffer, j);
-  free(buffer);
+  FILE *fp;
+  fp = fopen("Output1.txt", "w");
+  fprintf( fp, "This is the buffer: %s and this is the size: %lu\n", buffer, sizeof(buffer) );
+
+  write_to_socket(fd, buffer, sizeof(buffer));
 }
 
 
 static void recv_pokemon ( int fd )
 {
   char *buffer;
-  buffer = (char *)malloc( sizeof(struct pokemon) );
-  char *token;
+  buffer = (char *)malloc( 64 );
+  //char *token;
 
-  read_from_socket ( fd, buffer, sizeof(struct pokemon) );
+  read_from_socket ( fd, buffer, sizeof(buffer) );
 
+  FILE *fp;
+  fp = fopen("Output2.txt", "w");
+  fprintf( fp, "This is the buffer: %s and this is the size: %lu\n", buffer, sizeof(buffer) );
+
+  /*
   token = strtok(buffer, ",");
 
   if(atoi(token) == 1)
@@ -1047,7 +1056,7 @@ static void recv_pokemon ( int fd )
       token = strtok(NULL, ",");
       pokemon2.defense = atoi(token);
   }
-
+  */
   free(buffer);
 }
 
