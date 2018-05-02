@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
@@ -1001,23 +1002,31 @@ static void send_pokemon (int fd, int p )
 
   FILE *fp;
   fp = fopen("Output1.txt", "w");
-  fprintf( fp, "This is the buffer: %s and this is the size: %lu\n", buffer, sizeof(buffer) );
+  fprintf( fp, "This is the buffer: %s and this is the size: %lu\n", buffer, strlen(buffer) );
 
-  write_to_socket(fd, buffer, sizeof(buffer));
+  write_to_socket(fd, buffer, strlen(buffer));
 }
 
 
 static void recv_pokemon ( int fd )
 {
-  char *buffer;
-  buffer = (char *)malloc( 64 );
+  //char *buffer;
+  //buffer = (char *)malloc( 64 );
+  char *buffer = malloc( sizeof(char) * ( 64 + 1 ) );
   //char *token;
 
-  read_from_socket ( fd, buffer, sizeof(buffer) );
+//  read_from_socket ( fd, buffer, sizeof(buffer) );
+//  read_from_socket ( fd, buffer, 64 );
+
+  int len = 0;
+  ioctl(fd, FIONREAD, &len);
+  if (len > 0) {
+    len = read(sock, buffer, len);
+  }
 
   FILE *fp;
   fp = fopen("Output2.txt", "w");
-  fprintf( fp, "This is the buffer: %s and this is the size: %lu\n", buffer, sizeof(buffer) );
+  fprintf( fp, "This is the buffer: %s and this is the size: %lu\n", buffer, strlen(buffer) );
 
   /*
   token = strtok(buffer, ",");
