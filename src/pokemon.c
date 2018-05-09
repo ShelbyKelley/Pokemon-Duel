@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
@@ -47,6 +48,8 @@ static int player2_status  = 0;
 
 static int sock = -1;
 
+static int buffer_size;
+
 static void main_menu (void);
 static void network_menu (void);
 void print_header (int type);
@@ -59,7 +62,7 @@ static void server_start (void);
 static void client_start (void);
 static void init_server_network_game (void);
 static void init_client_network_game (void);
-static void recv_pokemon (int fd);
+static void recv_pokemon (int fd, int pk, struct pokemon *p);
 static void send_pokemon (int fd, int p);
 static void quit_game (void);
 
@@ -684,6 +687,7 @@ static void client_start (void)
 static void recv_remote_play (int sd, int dir, const char *name)
 {
   char buf[MAXDATASIZE];
+  struct pokemon *temp = (struct pokemon *)malloc(sizeof(struct pokemon));
 
   show_waiting_for_move (name);
 
@@ -691,7 +695,13 @@ static void recv_remote_play (int sd, int dir, const char *name)
   while ( strncmp (buf, "y", 2) && ! has_given_eof )
     read_from_socket (sd, buf, 2);
 
-  recv_pokemon(sd);
+  recv_pokemon(sd, 1, temp);
+  pokemon1 = *temp;
+
+  recv_pokemon(sd, 2, temp);
+  pokemon2 = *temp;
+
+  
 
   buf[0] = 'n';
   while ( strncmp ( buf, (dir == ASK_SERVER) ? "S" : "C", 2 )
@@ -847,11 +857,17 @@ static void init_client_network_game (void)
   char y_n[12];
   char yes_no[2];
   char buf[MAXDATASIZE];
+  struct pokemon *temp = (struct pokemon *)malloc(sizeof(struct pokemon));
 
   /* Player 2 is local player */
   print_header (0);
 
-  recv_pokemon ( sock );
+  recv_pokemon(sock, 1, temp);
+  pokemon1 = *temp;
+
+  recv_pokemon(sock, 2, temp);
+  pokemon2 = *temp;
+
 
   nettoe_term_reset_color ();
   show_game ();
@@ -975,13 +991,11 @@ static void init_client_network_game (void)
 static void send_pokemon (int fd, int p )
 {
   int j = 0;
-  char *buffer = "jigglypuff";
-  // char *buffer = "1,20,Jiglypuff,43,65,34";
-
-  /*
+  //char *buffer = "1,Jigglypuff,12,13,14";
+  char *buffer = malloc( sizeof(char) * ( 64 + 1 ) );
+  
   if( p == 1 )
   {
-    j  = sprintf(buffer,   "%d,", p);
     j += sprintf(buffer+j,   "%d,", pokemon1.number);
     j += sprintf(buffer+j, "%s,", pokemon1.name);
     j += sprintf(buffer+j, "%d,", pokemon1.hp);
@@ -990,73 +1004,78 @@ static void send_pokemon (int fd, int p )
   } 
   else if ( p == 2 )
   {
-    j  = sprintf(buffer,   "%d,", p);
     j += sprintf(buffer+j,   "%d,", pokemon2.number);
     j += sprintf(buffer+j, "%s,", pokemon2.name);
     j += sprintf(buffer+j, "%d,", pokemon2.hp);
     j += sprintf(buffer+j, "%d,", pokemon2.attack);
     j += sprintf(buffer+j, "%d",  pokemon2.defense);
   }
-  */
-
+  
   FILE *fp;
   fp = fopen("Output1.txt", "w");
-  fprintf( fp, "This is the buffer: %s and this is the size: %lu\n", buffer, sizeof(buffer) );
+  fprintf( fp, "This is the buffer: %s and this is the size: %lu\n", buffer, strlen(buffer) );
 
-  write_to_socket(fd, buffer, sizeof(buffer));
+  write_to_socket(fd, buffer, strlen(buffer));
+  free(buffer);
 }
 
 
-static void recv_pokemon ( int fd )
+static void recv_pokemon ( int fd, int pk, struct pokemon *p )
 {
-  char *buffer;
-  buffer = (char *)malloc( 64 );
-  //char *token;
-
-  read_from_socket ( fd, buffer, sizeof(buffer) );
+  char *token;
+  char *buffer = malloc( sizeof(char) * ( 64 + 1 ) );
+  
+  int len = 21;
+  
+  /*
+  ioctl(fd, FIONREAD, &len);
+  if (len > 0) 
+  {
+    len = read(fd, buffer, len);
+  }
+  */
+  
+  read(fd, buffer, len);
 
   FILE *fp;
   fp = fopen("Output2.txt", "w");
-  fprintf( fp, "This is the buffer: %s and this is the size: %lu\n", buffer, sizeof(buffer) );
+  fprintf( fp, "This is the buffer: %s and this is the size: %lu\n", buffer, strlen(buffer) );
 
-  /*
-  token = strtok(buffer, ",");
-
-  if(atoi(token) == 1)
+  if ( pk == 1 )
   {
-      token = strtok(NULL, ",");
-      pokemon1.number = atoi(token);
+      token = strtok(buffer, ",");
+      p->number = atoi(token);
         
       token = strtok(NULL, ",");
-      strcpy(pokemon1.name, token);
+      strcpy(p->name, token);
 
       token = strtok(NULL, ",");
-      pokemon1.hp = atoi(token);
+      p->hp = atoi(token);
 
       token = strtok(NULL, ",");
-      pokemon1.attack = atoi(token);
+      p->attack = atoi(token);
 
       token = strtok(NULL, ",");
-      pokemon1.defense = atoi(token);
+      p->defense = atoi(token);
   }
-  else if(atoi(token) == 2)
+  else if ( pk == 2 )
   {
-      token = strtok(NULL, ",");
-      pokemon2.number = atoi(token);
+      token = strtok(buffer, ",");
+      p->number = atoi(token);
         
       token = strtok(NULL, ",");
-      strcpy(pokemon2.name, token);
+      strcpy(p->name, token);
 
       token = strtok(NULL, ",");
-      pokemon2.hp = atoi(token);
+      p->hp = atoi(token);
 
       token = strtok(NULL, ",");
-      pokemon2.attack = atoi(token);
+      p->attack = atoi(token);
 
       token = strtok(NULL, ",");
-      pokemon2.defense = atoi(token);
+      p->defense = atoi(token);
   }
-  */
+
   free(buffer);
 }
 
